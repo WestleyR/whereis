@@ -1,0 +1,16 @@
+{
+  "name": "whereis",
+  "version": "v1.1.0",
+  "repo": "WestleyR/whereis",
+  "license": "The Clear BSD License",
+  "description": "whereis library",
+  "keywords": [
+    "whereis",
+    "command"
+  ],
+ "src": [
+      "README.md", "LICENSE",
+	  "src/clean_path_env.c", "src/clean_path_env.h",
+	  "src/whereis.c", "src/whereis.h"
+  ]
+}

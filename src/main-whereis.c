@@ -1,8 +1,8 @@
 // created by: WestleyR
 // email: westleyr@nym.hush.com
 // https://github.com/WestleyR/whereis
-// date: Nov 9, 2019
-// version-1.0.1
+// date: Dec 17, 2019
+// version-1.1.0
 //
 // The Clear BSD License
 //
@@ -20,7 +20,10 @@
 #include <unistd.h>
 #include <getopt.h>
 
-#define SCRIPT_VERSION "v1.0.1, Nov 9, 2019"
+#include "whereis_cmd.h"
+#include "clean_path_env.h"
+
+#define SCRIPT_VERSION "v1.1.0, Dec 17, 2019"
 
 void print_version() {
   printf("%s\n", SCRIPT_VERSION);
@@ -35,53 +38,6 @@ void print_usage(const char* script_name) {
   printf("  --version, -V    print the version for %s\n", script_name);
   printf("\n");
   printf("Source code: https://github.com/WestleyR/whereis\n");
-}
-
-int find_command(char **path, int path_len, const char* prog_name, int path_only) {
-  struct stat info;
-  int found = 1;
-  struct dirent *dir;
-  DIR *d;
-
-  for (int i = 0; i < path_len; i++) {
-    d = opendir(path[i]);
-    if (d != NULL) {
-      while ((dir = readdir(d)) != NULL) {
-        if (strcmp(dir->d_name, prog_name) == 0) {
-          char full_file_path[256];
-          full_file_path[0] = '\0';
-          strcat(full_file_path, path[i]);
-          strcat(full_file_path, "/");
-          strcat(full_file_path, prog_name);
-          if (path_only != 0) {
-            printf("%s: %s", prog_name, full_file_path);
-          } else {
-            printf("%s", full_file_path);
-          }
-          if (lstat(full_file_path, &info) != 0) {
-            perror("lstat");
-            return(1);
-          }
-          if (S_ISLNK(info.st_mode) && path_only != 0) {
-            char symlink_path[126];
-            ssize_t len = readlink(full_file_path, symlink_path, sizeof(symlink_path));
-            if (len != -1) {
-              symlink_path[len] = '\0';
-            } else {
-              printf("unable to fine link");
-            }
-            printf(" -> %s", symlink_path);
-          }
-          printf("\n");
-          found = 0;
-        }
-      }
-      closedir(d);
-      if (path_only == 0 && found == 0) break;
-    }
-  }
-
-  return(found);
 }
 
 int main(int argc, char** argv) {
@@ -115,48 +71,28 @@ int main(int argc, char** argv) {
   }
 
   char* pathenv = getenv("PATH");
-  char spliter[] = ":";
 
-  int p = 0;
   char** path;
   path = (char **) malloc(50);
   path[0] = (char*) malloc(50);
   if (path == NULL) {
     printf("malloc failed!\n");
-    perror("malloc");
     return(1);
   }
 
-  char *pathname = strtok(pathenv, spliter);
-  while (pathname != NULL) {
-    if (p == 0) {
-      strcpy(path[p], pathname);
-      p++;
-    }
-
-    int match = 0;
-    for (int i = 0; i < p; i++) {
-      if (strcmp(path[i], pathname) == 0) {
-        match = 1;
-      }
-    }
-    if (match != 1) {
-      path[p] = (char*) malloc(50);
-      strcpy(path[p], pathname);
-      p++;
-    }
-
-    pathname = strtok(NULL, spliter);
+  int plen = clean_path_env(path, pathenv);
+  if (plen == -1) {
+    fprintf(stderr, "Failed to clean path\n");
   }
 
+  int not_found = 0;
+
   if (optind < argc) {
-    if (argc - optind > 1) {
-      print_usage(argv[0]);
-      return(22);
-    }
-    int found = find_command(path, p, argv[optind], path_only);
-    if (found != 0) {
-      return(1);
+    for (int i = optind; i < argc; i++) {
+      int found = whereis_cmdp(path, plen, argv[i], path_only);
+      if (found != 0) {
+        not_found = 1;
+      }
     }
   } else {
     print_usage(argv[0]);
@@ -165,7 +101,7 @@ int main(int argc, char** argv) {
 
   free(path);
 
-  return(0);
+  return(not_found);
 }
 
 // vim: tabstop=2 shiftwidth=2 expandtab autoindent softtabstop=0
