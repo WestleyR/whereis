@@ -1,15 +1,14 @@
-// created by: WestleyR
-// email: westleyr@nym.hush.com
-// https://github.com/WestleyR/whereis
-// date: Dec 17, 2019
-// version-1.1.0
 //
-// The Clear BSD License
+//  main-whereis.c
+//  whereis - simple whereis command that works! (for macOS)
 //
-// Copyright (c) 2019 WestleyR
-// All rights reserved.
+// Created by WestleyR 2019-11-05
+// Source code: https://github.com/WestleyR/whereis
 //
-// This software is licensed under a Clear BSD License.
+// Copyright (c) 2019-2021 WestleyR. All rights reserved.
+// This software is licensed under a BSD 3-Clause Clear License.
+// Consult the LICENSE file that came with this software regarding
+// your rights to distribute this software.
 //
 
 #include <stdio.h>
@@ -20,10 +19,9 @@
 #include <unistd.h>
 #include <getopt.h>
 
-#include "whereis_cmd.h"
-#include "clean_path_env.h"
+#include "paths.h"
 
-#define SCRIPT_VERSION "v1.1.0, Dec 17, 2019"
+#define SCRIPT_VERSION "1.1.0"
 
 void print_version() {
   printf("%s\n", SCRIPT_VERSION);
@@ -70,28 +68,21 @@ int main(int argc, char** argv) {
     }
   }
 
-  char* pathenv = getenv("PATH");
-
-  char** path;
-  path = (char **) malloc(50);
-  path[0] = (char*) malloc(50);
-  if (path == NULL) {
-    printf("malloc failed!\n");
-    return(1);
-  }
-
-  int plen = clean_path_env(path, pathenv);
-  if (plen == -1) {
-    fprintf(stderr, "Failed to clean path\n");
-  }
+  //char** path = NULL;
+  //int plen = wst_get_path(path);
+  //if (plen == -1) {
+  //  fprintf(stderr, "Failed to clean path\n");
+  //}
+  wst_path_ctx* path_ctx = wst_get_path();
 
   int not_found = 0;
 
   if (optind < argc) {
     for (int i = optind; i < argc; i++) {
-      int found = whereis_cmdp(path, plen, argv[i], path_only);
-      if (found != 0) {
-        not_found = 1;
+      char* cmd_path = wst_whereis(path_ctx, argv[i], path_only);
+      if (cmd_path != NULL) {
+        printf("%s\n", cmd_path);
+        free(cmd_path);
       }
     }
   } else {
@@ -99,9 +90,9 @@ int main(int argc, char** argv) {
     return(22);
   }
 
-  free(path);
-
   return(not_found);
 }
+
+
 
 // vim: tabstop=2 shiftwidth=2 expandtab autoindent softtabstop=0
