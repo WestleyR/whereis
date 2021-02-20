@@ -20,6 +20,7 @@
 #include <getopt.h>
 
 #include "paths.h"
+#include "bool.h"
 
 #define SCRIPT_VERSION "1.1.0"
 
@@ -40,7 +41,7 @@ void print_usage(const char* script_name) {
 
 int main(int argc, char** argv) {
   int opt = 0;
-  int path_only = 1;
+  bool path_only = false;
 
   static struct option long_options[] = {
     {"path-only", no_argument, 0, 'm'},
@@ -52,7 +53,7 @@ int main(int argc, char** argv) {
   while ((opt = getopt_long(argc, argv, "mhV", long_options, 0)) != -1) {
     switch (opt) {
       case 'm':
-        path_only = 0;
+        path_only = true;
         break;
 
       case 'V':
@@ -80,13 +81,13 @@ int main(int argc, char** argv) {
   }
 
   wst_path_ctx* path_ctx = wst_get_path();
+  wst_set_path_only(path_ctx, path_only);
   int not_found = 0;
 
   for (int i = optind; i < argc; i++) {
-    char* cmd_path = wst_whereis(path_ctx, argv[i], path_only);
+    char* cmd_path = wst_whereis(path_ctx, argv[i]);
     if (cmd_path != NULL) {
       printf("%s\n", cmd_path);
-      free(cmd_path);
     }
   }
 
