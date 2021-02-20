@@ -28,6 +28,7 @@ typedef struct wst_path_ctx wst_path_ctx;
 
 wst_path_ctx* wst_get_path();
 char* wst_whereis(wst_path_ctx* ctx, const char* prog_name, bool path_only);
+int wst_free(wst_path_ctx* ctx);
 
 #endif // WST_PATHS_H__
 

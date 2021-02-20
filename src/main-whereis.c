@@ -73,24 +73,26 @@ int main(int argc, char** argv) {
   //if (plen == -1) {
   //  fprintf(stderr, "Failed to clean path\n");
   //}
-  wst_path_ctx* path_ctx = wst_get_path();
 
-  int not_found = 0;
-
-  if (optind < argc) {
-    for (int i = optind; i < argc; i++) {
-      char* cmd_path = wst_whereis(path_ctx, argv[i], path_only);
-      if (cmd_path != NULL) {
-        printf("%s\n", cmd_path);
-        free(cmd_path);
-      }
-    }
-  } else {
+  if (argc <= optind) {
     print_usage(argv[0]);
-    return(22);
+    return 22;
   }
 
-  return(not_found);
+  wst_path_ctx* path_ctx = wst_get_path();
+  int not_found = 0;
+
+  for (int i = optind; i < argc; i++) {
+    char* cmd_path = wst_whereis(path_ctx, argv[i], path_only);
+    if (cmd_path != NULL) {
+      printf("%s\n", cmd_path);
+      free(cmd_path);
+    }
+  }
+
+  wst_free(path_ctx);
+
+  return not_found;
 }
 
 

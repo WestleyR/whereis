@@ -15,46 +15,47 @@
 
 struct wst_path_ctx {
   char** paths;
-  int path_len;
+  int path_len; // TODO: this should be path_count
+  bool path_only; // TODO: make this work
 };
 
-
-
 wst_path_ctx* wst_get_path() {
-
   wst_path_ctx* ctx;
   ctx = (wst_path_ctx*) malloc(sizeof(wst_path_ctx));
-
-  char** new_path = (char**) malloc(20);
+  ctx->paths = (char**) malloc(30 * sizeof(char*));
 
   int p = 0;
-  char* path_env = strdup(getenv("PATH"));
+  char* path_env = getenv("PATH");
 
   char *pathname = strtok(path_env, ":");
   while (pathname != NULL) {
     bool match = false;
     for (int i = 0; i < p; i++) {
-      if (strcmp(new_path[i], pathname) == 0) {
+      if (strcmp(ctx->paths[i], pathname) == 0) {
         match = true;;
       }
     }
     if (!match) {
-      new_path[p] = (char*) malloc(50);
-      strcpy(new_path[p], pathname);
+      ctx->paths[p] = (char*) malloc(80);
+      strcpy(ctx->paths[p], pathname);
       p++;
     }
 
     pathname = strtok(NULL, ":");
   }
 
-//  free(path_env);
-  ctx->paths = new_path;
   ctx->path_len = p;
 
   return ctx;
 }
 
-int wst_ctx_free(wst_path_ctx* ctx) {
+int wst_free(wst_path_ctx* ctx) {
+  for (int i = 0; i < ctx->path_len; i++) {
+    free(ctx->paths[i]);
+  }
+  free(ctx->paths);
+  free(ctx);
+
   return 0;
 }
 
@@ -64,10 +65,8 @@ char* wst_whereis(wst_path_ctx* ctx, const char* prog_name, bool path_only) {
   struct dirent *dir;
   DIR *d;
 
-  printf("PATH_LEN: %d\n", ctx->path_len);
-
   for (int i = 0; i < ctx->path_len; i++) {
-    printf("Opening: %s\n", ctx->paths[i]);
+    printf("Opening: %s->%d\n", ctx->paths[i], i);
     d = opendir(ctx->paths[i]);
     if (d != NULL) {
       while ((dir = readdir(d)) != NULL) {
