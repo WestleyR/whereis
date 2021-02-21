@@ -32,10 +32,10 @@ void print_usage(const char* script_name) {
   printf("Usage: %s [option] <command>\n", script_name);
   printf("\n");
   printf("Options:\n");
-  printf("  --path-only, -m  only print the command path\n");
-  printf("  --no-nl, -n        dont print a newline after the path\n");
-  printf("  --help, -h       print this help menu\n");
-  printf("  --version, -V    print the version for %s\n", script_name);
+  printf("  -m, --path-only  only print the command path\n");
+  printf("  -n, --no-nl      dont print a newline after the path\n");
+  printf("  -h, --help       print this help menu\n");
+  printf("  -V, --version    print the version for %s\n", script_name);
   printf("\n");
   printf("Source code: https://github.com/WestleyR/whereis\n");
 }
