@@ -33,6 +33,7 @@ void print_usage(const char* script_name) {
   printf("\n");
   printf("Options:\n");
   printf("  --path-only, -m  only print the command path\n");
+  printf("  --no-nl, -n        dont print a newline after the path\n");
   printf("  --help, -h       print this help menu\n");
   printf("  --version, -V    print the version for %s\n", script_name);
   printf("\n");
@@ -42,18 +43,24 @@ void print_usage(const char* script_name) {
 int main(int argc, char** argv) {
   int opt = 0;
   bool path_only = false;
+  bool print_newline = true;
 
   static struct option long_options[] = {
     {"path-only", no_argument, 0, 'm'},
+    {"no-nl", no_argument, 0, 'n'},
     {"help", no_argument, 0, 'h'},
     {"version", no_argument, 0, 'V'},
     {NULL, 0, 0, 0}
   };
 
-  while ((opt = getopt_long(argc, argv, "mhV", long_options, 0)) != -1) {
+  while ((opt = getopt_long(argc, argv, "mnhV", long_options, 0)) != -1) {
     switch (opt) {
       case 'm':
         path_only = true;
+        break;
+
+      case 'n':
+        print_newline = false;
         break;
 
       case 'V':
@@ -69,31 +76,34 @@ int main(int argc, char** argv) {
     }
   }
 
-  //char** path = NULL;
-  //int plen = wst_get_path(path);
-  //if (plen == -1) {
-  //  fprintf(stderr, "Failed to clean path\n");
-  //}
-
+  // If no commands passed, show the help output
   if (argc <= optind) {
     print_usage(argv[0]);
     return 22;
   }
 
+  // Create a new path ctx
   wst_path_ctx* path_ctx = wst_get_path();
+
+  // Set the path-only option
   wst_set_path_only(path_ctx, path_only);
-  int not_found = 0;
+
+  // Return 1 if no command was found
+  int rc = 1;
 
   for (int i = optind; i < argc; i++) {
+    // Search the path_ctx for the given command
     char* cmd_path = wst_whereis(path_ctx, argv[i]);
     if (cmd_path != NULL) {
-      printf("%s\n", cmd_path);
+      printf("%s%s", cmd_path, print_newline ? "\n" : "");
+      rc = 0;
     }
   }
 
+  // Free the ctx
   wst_free(path_ctx);
 
-  return not_found;
+  return rc;
 }
 
 
