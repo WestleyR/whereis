@@ -74,7 +74,7 @@ int wst_free(wst_path_ctx* ctx) {
   return 0;
 }
 
-int append_pointer(char** str1, char* str2) {
+int append_pointer(char** str1, const char* str2) {
   if (str2 == NULL) {
     return -1;
   }
@@ -151,12 +151,10 @@ char* wst_whereis(wst_path_ctx* ctx, const char* prog_name) {
 
           if (ctx->path_only) {
             append_pointer(&output_str, full_file_path);
-            //printf("%s", full_file_path);
           } else {
             append_pointer(&output_str, prog_name);
             append_pointer(&output_str, ": ");
             append_pointer(&output_str, full_file_path);
-            //printf("%s: %s", prog_name, full_file_path);
           }
           if (lstat(full_file_path, &info) != 0) {
             perror("lstat");
@@ -164,22 +162,27 @@ char* wst_whereis(wst_path_ctx* ctx, const char* prog_name) {
           }
 
           if (S_ISLNK(info.st_mode) && !ctx->path_only) {
-            char symlink_path[512];
-            //symlink_path = (char*) malloc(512); // TODO: fix this malloc
-            ssize_t len = readlink(full_file_path, symlink_path, sizeof(symlink_path));
-//            if (len != -1) {
-//              symlink_path[len] = '\0';
-//            } else {
-//              printf("unable to fine link");
-//            }
-            //printf(" -> %s", symlink_path);
-//            sprintf(output_str, "%s -> %s", output_str, symlink_path);
+            char* symlink_path = NULL;
+            size_t link_len;
+            size_t init_size = 80;
+
+            // Make sure to only malloc enought, and not too much
+            while (true) {
+              free(symlink_path);
+              symlink_path = (char*) malloc(init_size);
+              link_len = readlink(full_file_path, symlink_path, init_size);
+
+              if (link_len < init_size) {
+                break;
+              }
+              init_size += 100;
+            }
+
+            symlink_path[link_len] = '\0';
             append_pointer(&output_str, " -> ");
             append_pointer(&output_str, symlink_path);
-//            free(symlink_path);
+            free(symlink_path);
           }
-
-          //printf("\n");
           found = 0;
         }
       }
