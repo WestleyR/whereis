@@ -20,8 +20,8 @@ struct wst_path_ctx {
   // is automaticly freed when called wst_free().
   char* cmd_output;
 
-  int path_len; // TODO: this should be path_count
-  bool path_only; // TODO: make this work
+  int path_count;
+  bool path_only;
 };
 
 wst_path_ctx* wst_get_path() {
@@ -49,7 +49,7 @@ wst_path_ctx* wst_get_path() {
     pathname = strtok(NULL, ":");
   }
 
-  ctx->path_len = p;
+  ctx->path_count = p;
   ctx->cmd_output = NULL;
 
   return ctx;
@@ -64,7 +64,7 @@ int wst_set_path_only(wst_path_ctx* ctx, bool path_only) {
 }
 
 int wst_free(wst_path_ctx* ctx) {
-  for (int i = 0; i < ctx->path_len; i++) {
+  for (int i = 0; i < ctx->path_count; i++) {
     free(ctx->paths[i]);
   }
   free(ctx->paths);
@@ -136,17 +136,17 @@ char* wst_whereis(wst_path_ctx* ctx, const char* prog_name) {
   ctx->cmd_output = NULL;
   char* output_str = NULL;
 
-  for (int i = 0; i < ctx->path_len; i++) {
+  for (int i = 0; i < ctx->path_count; i++) {
     d = opendir(ctx->paths[i]);
     if (d != NULL) {
       while ((dir = readdir(d)) != NULL) {
         if (strcmp(dir->d_name, prog_name) == 0) {
-          char full_file_path[256];
-          full_file_path[0] = '\0';
-          strcat(full_file_path, ctx->paths[i]);
-          strcat(full_file_path, "/");
-          strcat(full_file_path, prog_name);
+          char* full_file_path = NULL;
+          catpath(&full_file_path, ctx->paths[i]);
+          catpath(&full_file_path, prog_name);
 
+          // If the output string already contains somthing (since we found at lease one command),
+          // then put a newline.
           if (output_str != NULL) append_pointer(&output_str, "\n");
 
           if (ctx->path_only) {
@@ -157,9 +157,11 @@ char* wst_whereis(wst_path_ctx* ctx, const char* prog_name) {
             append_pointer(&output_str, full_file_path);
           }
           if (lstat(full_file_path, &info) != 0) {
-            perror("lstat");
+            perror(full_file_path);
+            free(full_file_path);
             return NULL;
           }
+          free(full_file_path);
 
           if (S_ISLNK(info.st_mode) && !ctx->path_only) {
             char* symlink_path = NULL;

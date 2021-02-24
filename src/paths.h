@@ -23,6 +23,7 @@
 #include <dirent.h>
 
 #include "bool.h"
+#include "catpath.h"
 
 typedef struct wst_path_ctx wst_path_ctx;
 
