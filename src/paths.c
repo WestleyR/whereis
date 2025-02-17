@@ -5,7 +5,7 @@
 // Created by WestleyR 2019-12-17
 // Source code: https://github.com/WestleyR/whereis
 //
-// Copyright (c) 2019-2021 WestleyR. All rights reserved.
+// Copyright (c) 2019-2025 WestleyR. All rights reserved.
 // This software is licensed under a BSD 3-Clause Clear License.
 // Consult the LICENSE file that came with this software regarding
 // your rights to distribute this software.
@@ -90,6 +90,7 @@ int append_pointer(char** str1, const char* str2) {
       str2++;
       i++;
     }
+    new_str1[i] = '\0';
 
     *str1 = new_str1;
 
@@ -145,7 +146,7 @@ char* wst_whereis(wst_path_ctx* ctx, const char* prog_name) {
           catpath(&full_file_path, ctx->paths[i]);
           catpath(&full_file_path, prog_name);
 
-          // If the output string already contains somthing (since we found at lease one command),
+          // If the output string already contains something (since we found at lease one command),
           // then put a newline.
           if (output_str != NULL) append_pointer(&output_str, "\n");
 
@@ -161,18 +162,22 @@ char* wst_whereis(wst_path_ctx* ctx, const char* prog_name) {
             free(full_file_path);
             return NULL;
           }
-          free(full_file_path);
 
           if (S_ISLNK(info.st_mode) && !ctx->path_only) {
             char* symlink_path = NULL;
-            size_t link_len;
+            size_t link_len = 0;
             size_t init_size = 80;
 
-            // Make sure to only malloc enought, and not too much
+            // Make sure to only malloc enough, and not too much
             while (true) {
               free(symlink_path);
               symlink_path = (char*) malloc(init_size);
               link_len = readlink(full_file_path, symlink_path, init_size);
+              if (link_len == -1) {
+                printf("Failed to read link\n");
+                perror(full_file_path);
+                return NULL;
+              }
 
               if (link_len < init_size) {
                 break;
@@ -186,6 +191,7 @@ char* wst_whereis(wst_path_ctx* ctx, const char* prog_name) {
             free(symlink_path);
           }
           found = 0;
+          free(full_file_path);
         }
       }
       closedir(d);
@@ -197,7 +203,5 @@ char* wst_whereis(wst_path_ctx* ctx, const char* prog_name) {
 
   return ctx->cmd_output;
 }
-
-
 
 // vim: tabstop=2 shiftwidth=2 expandtab autoindent softtabstop=0
